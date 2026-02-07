@@ -1,0 +1,32 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.env
+.env.local
+
+# Downloaded llama binaries (run 2_download_llama_binary.py to get)
+llama-bin/
+
+# Model files (large; run download scripts to get)
+models/*.gguf
+models/.cache/
+
+# llama-cpp-custom webui (track repo, ignore installed deps)
+llama-cpp-custom/tools/server/webui/node_modules/
+
+# IDE / editor
+.idea/
+.vscode/
+.vs/
+*.code-workspace
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
