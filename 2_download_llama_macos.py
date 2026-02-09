@@ -166,9 +166,10 @@ def download_llama_cpp():
     print(f"Detected: {arch_name} ({arch})")
     print()
     
-    # Download URL - using a recent stable release
+    # Download URL - using a recent release with full web UI features
+    # b7898+ has all features including --path, --webui-config-file, --models-dir
     # Check https://github.com/ggml-org/llama.cpp/releases for latest
-    release = "b5604"
+    release = "b7898"
     url = f"https://github.com/ggml-org/llama.cpp/releases/download/{release}/llama-{release}-bin-macos-{arch}.zip"
     
     zip_file = "llama-cpp-macos.zip"
