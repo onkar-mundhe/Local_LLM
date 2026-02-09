@@ -85,38 +85,73 @@ def start_multi_model_server():
     threads = os.cpu_count() or 4
     context_size = 32768
     
-    # Models to check (in order of preference)
-    models = [
-        "models/Model A (non-thinking).gguf",
-        "models/Model B (thinking).gguf",
-        "models/Qwen3-0.6B-Q4_K_M.gguf",
-        "models/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    # Models to check
+    model_configs = [
+        ("models/Model A (non-thinking).gguf", "Model A - Non-thinking (direct responses)"),
+        ("models/Model B (thinking).gguf", "Model B - Thinking (chain-of-thought)"),
+        ("models/Qwen3-0.6B-Q4_K_M.gguf", "Qwen3 0.6B"),
+        ("models/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf", "Qwen2.5 0.5B Instruct"),
     ]
     
-    # Find first available model
-    model_path = None
+    # Find available models
+    available_models = []
     print("Checking for models...")
-    for m in models:
-        if os.path.exists(m):
-            model_path = m
-            print(f"  ✓ Found: {m}")
-            break
+    for path, name in model_configs:
+        if os.path.exists(path):
+            available_models.append((path, name))
+            print(f"  ✓ Found: {name}")
         else:
-            print(f"  ✗ Not found: {m}")
+            print(f"  ✗ Not found: {name}")
     
-    # Also check for any .gguf file in models folder
-    if not model_path:
-        models_dir = Path("models")
-        if models_dir.exists():
-            for gguf in models_dir.glob("*.gguf"):
-                model_path = str(gguf)
-                print(f"  ✓ Found: {model_path}")
-                break
+    # Also check for any other .gguf files in models folder
+    models_dir = Path("models")
+    if models_dir.exists():
+        known_paths = [p for p, _ in model_configs]
+        for gguf in models_dir.glob("*.gguf"):
+            if str(gguf) not in known_paths:
+                available_models.append((str(gguf), gguf.stem))
+                print(f"  ✓ Found: {gguf.stem}")
     
-    if not model_path:
+    if not available_models:
         print("\n✗ No models found! Please download a model first.")
         print("Run: python 1_download_model.py")
         return
+    
+    print()
+    
+    # Model selection
+    if len(available_models) == 1:
+        model_path, model_name = available_models[0]
+        print(f"Using: {model_name}")
+    else:
+        print("=" * 50)
+        print("SELECT A MODEL:")
+        print("=" * 50)
+        for i, (path, name) in enumerate(available_models, 1):
+            print(f"  [{i}] {name}")
+        print()
+        
+        while True:
+            try:
+                choice = input(f"Enter choice (1-{len(available_models)}) or press Enter for [1]: ").strip()
+                if choice == "":
+                    choice = 1
+                else:
+                    choice = int(choice)
+                
+                if 1 <= choice <= len(available_models):
+                    model_path, model_name = available_models[choice - 1]
+                    break
+                else:
+                    print(f"Please enter a number between 1 and {len(available_models)}")
+            except ValueError:
+                print("Please enter a valid number")
+            except KeyboardInterrupt:
+                print("\n\nCancelled.")
+                return
+        
+        print()
+        print(f"Selected: {model_name}")
     
     print()
     
