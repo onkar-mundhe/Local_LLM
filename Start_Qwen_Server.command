@@ -1,12 +1,13 @@
 #!/bin/bash
-# Start Qwen Server - macOS
+# Start Qwen Multi-Model Server - macOS
 # Simply double-click this file to start the server!
 
 # Change to the directory where this script is located
 cd "$(dirname "$0")"
 
+echo ""
 echo "=========================================="
-echo "  Starting Qwen Server..."
+echo "  Starting Qwen Multi-Model Server..."
 echo "=========================================="
 echo ""
 
@@ -20,19 +21,14 @@ else
     echo "Please install Python 3 first."
     echo ""
     echo "Install via Homebrew: brew install python3"
-    echo "Or download from: https://www.python.org/downloads/"
     echo ""
     read -p "Press Enter to exit..."
     exit 1
 fi
-
-echo "Using: $PYTHON"
-echo ""
 
 # Run the server
 $PYTHON start_server.py
 
 # Keep terminal open on exit
 echo ""
-echo "Server stopped."
 read -p "Press Enter to close..."
