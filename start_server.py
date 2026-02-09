@@ -148,7 +148,8 @@ def start_multi_model_server():
         except:
             pass
 
-    # Build command with full features (requires llama-server b7898+)
+    # Build command - using core arguments compatible with all llama-server versions
+    # Note: --webui-config-file and --path are only available in newer versions
     cmd = [
         server_path,
         "--model", model_path,
@@ -157,17 +158,7 @@ def start_multi_model_server():
         "--threads", str(threads),
         "--ctx-size", str(context_size),
         "--n-predict", "8192",
-        "--temp", "0.7",
-        "--top-p", "0.9",
     ]
-    
-    # Add webui config if available
-    if webui_config.exists():
-        cmd.extend(["--webui-config-file", str(webui_config)])
-    
-    # Use custom UI if available
-    if custom_public.is_dir() and (custom_public / "index.html").exists():
-        cmd.extend(["--path", str(custom_public)])
 
     url = f"http://localhost:{port}"
     opened = [False]

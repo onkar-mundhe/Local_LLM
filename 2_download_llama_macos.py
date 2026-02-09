@@ -166,14 +166,18 @@ def download_llama_cpp():
     print(f"Detected: {arch_name} ({arch})")
     print()
     
-    # Download URL - using a recent release with full web UI features
-    # b7898+ has all features including --path, --webui-config-file, --models-dir
-    # Check https://github.com/ggml-org/llama.cpp/releases for latest
-    release = "b7898"
+    # Download URL - use a known working release with macOS binaries
+    # Not all releases have pre-built binaries, so we use a tested one
+    # Check https://github.com/ggml-org/llama.cpp/releases for alternatives
+    release = "b3963"  # Known working release with macOS binaries
     url = f"https://github.com/ggml-org/llama.cpp/releases/download/{release}/llama-{release}-bin-macos-{arch}.zip"
     
     zip_file = "llama-cpp-macos.zip"
     extract_dir = "llama-bin"
+    
+    # Clean up any existing failed download
+    if os.path.exists(zip_file):
+        os.remove(zip_file)
     
     # Download
     success = download_with_curl(url, zip_file)
@@ -186,10 +190,25 @@ def download_llama_cpp():
         print()
         print("Manual download instructions:")
         print(f"1. Open in browser: https://github.com/ggml-org/llama.cpp/releases")
-        print(f"2. Download: llama-{release}-bin-macos-{arch}.zip")
-        print(f"3. Extract to: {extract_dir}/")
+        print(f"2. Find a release with 'macos-{arch}.zip' binary")
+        print(f"3. Download and extract to: {extract_dir}/")
         print(f"4. Run: xattr -cr {extract_dir}")
         print(f"5. Run: chmod +x {extract_dir}/llama-server")
+        return False
+    
+    # Verify it's actually a zip file (not an HTML error page)
+    import zipfile
+    if not zipfile.is_zipfile(zip_file):
+        print()
+        print("✗ Downloaded file is not a valid zip!")
+        print("  This usually means the release doesn't have pre-built macOS binaries.")
+        print()
+        print("Manual download:")
+        print(f"1. Go to: https://github.com/ggml-org/llama.cpp/releases")
+        print(f"2. Look for a release with 'bin-macos-{arch}.zip' in the assets")
+        print(f"3. Download, extract to llama-bin/, then run:")
+        print(f"   xattr -cr llama-bin && chmod +x llama-bin/llama-server")
+        os.remove(zip_file)
         return False
     
     print("✓ Download complete!")
