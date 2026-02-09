@@ -5,27 +5,48 @@ Start Qwen3-0.6B server on port 7777
 import os
 import subprocess
 import sys
+import platform
 from pathlib import Path
 
 def find_llama_server():
-    """Find llama-server in various possible locations"""
-    possible_paths = [
-        "llama-server",
-        "llama-bin/llama-server",
-        "llama-bin/build/bin/Release/llama-server",
-        "llama.cpp/build/bin/Release/llama-server",
-    ]
+    """Find llama-server executable (cross-platform)"""
+    is_windows = platform.system() == "Windows"
     
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
-    
-    # Search in llama-bin directory recursively
-    llama_bin = Path("llama-bin")
-    if llama_bin.exists():
-        for file in llama_bin.rglob("llama-server"):
-            if file.is_file():
-                return str(file)
+    if is_windows:
+        # Windows: look for .exe files
+        possible_paths = [
+            "llama-server.exe",
+            "llama-bin/llama-server.exe",
+            "llama-bin/build/bin/Release/llama-server.exe",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server.exe"):
+                if file.is_file():
+                    return str(file)
+    else:
+        # macOS/Linux: look for binary WITHOUT .exe extension
+        possible_paths = [
+            "llama-server",
+            "llama-bin/llama-server",
+            "llama-bin/build/bin/Release/llama-server",
+            "llama.cpp/build/bin/Release/llama-server",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path) and not path.endswith('.exe'):
+                return path
+        
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server"):
+                if file.is_file() and not str(file).endswith('.exe'):
+                    return str(file)
     
     return None
 

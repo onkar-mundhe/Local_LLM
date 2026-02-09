@@ -17,30 +17,46 @@ def find_llama_server():
     """Find llama-server executable (cross-platform)"""
     # Detect OS - use .exe on Windows, no extension on macOS/Linux
     is_windows = platform.system() == "Windows"
-    exe_name = "llama-server.exe" if is_windows else "llama-server"
     
-    possible_paths = [
-        exe_name,
-        f"llama-bin/{exe_name}",
-        f"llama-bin/build/bin/Release/{exe_name}",
-    ]
-    
-    # On macOS, also check common locations
-    if not is_windows:
-        possible_paths.extend([
+    if is_windows:
+        # Windows: look for .exe files
+        possible_paths = [
+            "llama-server.exe",
+            "llama-bin/llama-server.exe",
+            "llama-bin/build/bin/Release/llama-server.exe",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        # Recursive search for .exe
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server.exe"):
+                if file.is_file():
+                    return str(file)
+    else:
+        # macOS/Linux: look for binary WITHOUT .exe extension
+        possible_paths = [
+            "llama-server",
             "llama-bin/llama-server",
+            "llama-bin/build/bin/Release/llama-server",
             "llama.cpp/build/bin/Release/llama-server",
-        ])
-    
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
-    
-    llama_bin = Path("llama-bin")
-    if llama_bin.exists():
-        for file in llama_bin.rglob(exe_name):
-            if file.is_file():
-                return str(file)
+        ]
+        
+        for path in possible_paths:
+            # Make sure it's not the .exe file!
+            if os.path.exists(path) and not path.endswith('.exe'):
+                return path
+        
+        # Recursive search - find llama-server but NOT llama-server.exe
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server"):
+                # Skip .exe files and ensure it's the actual binary
+                if file.is_file() and not str(file).endswith('.exe'):
+                    return str(file)
     
     return None
 
