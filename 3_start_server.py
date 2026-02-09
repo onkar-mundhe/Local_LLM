@@ -8,12 +8,12 @@ import sys
 from pathlib import Path
 
 def find_llama_server():
-    """Find llama-server.exe in various possible locations"""
+    """Find llama-server in various possible locations"""
     possible_paths = [
-        "llama-server.exe",
-        "llama-bin/llama-server.exe",
-        "llama-bin/build/bin/Release/llama-server.exe",
-        "llama.cpp/build/bin/Release/llama-server.exe",
+        "llama-server",
+        "llama-bin/llama-server",
+        "llama-bin/build/bin/Release/llama-server",
+        "llama.cpp/build/bin/Release/llama-server",
     ]
     
     for path in possible_paths:
@@ -23,8 +23,9 @@ def find_llama_server():
     # Search in llama-bin directory recursively
     llama_bin = Path("llama-bin")
     if llama_bin.exists():
-        for file in llama_bin.rglob("llama-server.exe"):
-            return str(file)
+        for file in llama_bin.rglob("llama-server"):
+            if file.is_file():
+                return str(file)
     
     return None
 
@@ -50,12 +51,18 @@ def start_server():
     # Find llama-server
     server_path = find_llama_server()
     if not server_path:
-        print("✗ Error: llama-server.exe not found")
+        print("✗ Error: llama-server not found")
         print()
         print("Run: python 2_download_llama_binary.py")
         print("Or download manually from:")
-        print("https://github.com/ggerganov/llama.cpp/releases")
+        print("https://github.com/ggml-org/llama.cpp/releases")
         return
+    
+    # Make sure the binary is executable (macOS/Linux requirement)
+    try:
+        os.chmod(server_path, 0o755)
+    except:
+        pass
     
     print(f"Configuration:")
     print(f"  Server: {server_path}")

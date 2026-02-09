@@ -1,8 +1,9 @@
 """
-Download llama.cpp pre-built binary for Windows
+Download llama.cpp pre-built binary for macOS
 """
 
 import os
+import platform
 import shutil
 import zipfile
 import requests
@@ -10,14 +11,23 @@ from pathlib import Path
 
 def download_llama_cpp():
     print("=" * 50)
-    print("Downloading llama.cpp binary for Windows")
+    print("Downloading llama.cpp binary for macOS")
     print("=" * 50)
     print()
     
+    # Detect architecture
+    machine = platform.machine().lower()
+    if 'arm' in machine or 'aarch64' in machine:
+        arch = "arm64"  # Apple Silicon (M1/M2/M3)
+        print("Detected: Apple Silicon (ARM64)")
+    else:
+        arch = "x64"    # Intel Mac
+        print("Detected: Intel Mac (x64)")
+    print()
+    
     # Use ggml-org/llama.cpp (has Qwen3 architecture support).
-    # b4359 from ggerganov does not support 'qwen3'; use recent ggml-org build.
     # Latest at: https://github.com/ggml-org/llama.cpp/releases
-    url = "https://github.com/ggml-org/llama.cpp/releases/download/b7898/llama-b7898-bin-win-cpu-x64.zip"
+    url = f"https://github.com/ggml-org/llama.cpp/releases/download/b7898/llama-b7898-bin-macos-{arch}.zip"
     
     zip_file = "llama-cpp.zip"
     extract_dir = "llama-bin"
@@ -56,10 +66,10 @@ def download_llama_cpp():
         # Clean up zip file
         os.remove(zip_file)
         
-        # If zip had a single top-level folder, flatten so exes are in llama-bin/
+        # If zip had a single top-level folder, flatten so binaries are in llama-bin/
         extract_path = Path(extract_dir)
         subdirs = [d for d in extract_path.iterdir() if d.is_dir()]
-        if len(subdirs) == 1 and not (extract_path / "llama-server.exe").exists():
+        if len(subdirs) == 1 and not (extract_path / "llama-server").exists():
             subdir = subdirs[0]
             for f in subdir.iterdir():
                 dest = extract_path / f.name
@@ -71,17 +81,23 @@ def download_llama_cpp():
                 shutil.move(str(f), str(dest))
             subdir.rmdir()
         
+        # Make binaries executable
+        for binary in extract_path.glob("llama-*"):
+            if binary.is_file():
+                os.chmod(binary, 0o755)
+        
         print(f"✓ Extracted to: {os.path.abspath(extract_dir)}")
         print()
-        print("Look for 'llama-server.exe' in the extracted folder")
+        print("Look for 'llama-server' in the extracted folder")
         
     except Exception as e:
         print(f"\n✗ Error: {e}")
         print()
         print("Manual download:")
         print("1. Visit: https://github.com/ggml-org/llama.cpp/releases")
-        print("2. Download: llama-bXXXX-bin-win-cpu-x64.zip (latest build)")
-        print("3. Extract to llama-bin/ so llama-server.exe is under llama-bin/")
+        print(f"2. Download: llama-bXXXX-bin-macos-{arch}.zip (latest build)")
+        print("3. Extract to llama-bin/ so llama-server is under llama-bin/")
+        print("4. Run: chmod +x llama-bin/llama-server")
 
 if __name__ == "__main__":
     try:

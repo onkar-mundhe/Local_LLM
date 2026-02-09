@@ -11,13 +11,26 @@ import time
 import webbrowser
 from pathlib import Path
 
+import platform
+
 def find_llama_server():
-    """Find llama-server.exe"""
+    """Find llama-server executable (cross-platform)"""
+    # Detect OS - use .exe on Windows, no extension on macOS/Linux
+    is_windows = platform.system() == "Windows"
+    exe_name = "llama-server.exe" if is_windows else "llama-server"
+    
     possible_paths = [
-        "llama-server.exe",
-        "llama-bin/llama-server.exe",
-        "llama-bin/build/bin/Release/llama-server.exe",
+        exe_name,
+        f"llama-bin/{exe_name}",
+        f"llama-bin/build/bin/Release/{exe_name}",
     ]
+    
+    # On macOS, also check common locations
+    if not is_windows:
+        possible_paths.extend([
+            "llama-bin/llama-server",
+            "llama.cpp/build/bin/Release/llama-server",
+        ])
     
     for path in possible_paths:
         if os.path.exists(path):
@@ -25,8 +38,9 @@ def find_llama_server():
     
     llama_bin = Path("llama-bin")
     if llama_bin.exists():
-        for file in llama_bin.rglob("llama-server.exe"):
-            return str(file)
+        for file in llama_bin.rglob(exe_name):
+            if file.is_file():
+                return str(file)
     
     return None
 
@@ -67,7 +81,7 @@ def start_multi_model_server():
     # Find server
     server_path = find_llama_server()
     if not server_path:
-        print("✗ Error: llama-server.exe not found")
+        print("✗ Error: llama-server not found")
         return
     
     print(f"Server: {server_path}")
@@ -89,6 +103,13 @@ def start_multi_model_server():
     webui_config = project_dir / "webui-config.json"
     models_preset = project_dir / "models-preset.ini"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
+
+    # Make executable on macOS/Linux
+    if platform.system() != "Windows":
+        try:
+            os.chmod(server_path, 0o755)
+        except:
+            pass
 
     # Build command - router server mode with multiple models
     cmd = [
