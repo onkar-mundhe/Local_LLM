@@ -114,24 +114,27 @@ def start_multi_model_server():
     print("=" * 60)
     print()
     
-    # Paths for UI customization
+    # Paths for UI customization and presets
     project_dir = Path(__file__).resolve().parent
     webui_config = project_dir / "webui-config.json"
+    models_preset = project_dir / "models-preset.ini"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
 
-    # Build command - Multi-model mode with PRELOADING
-    # Using --model for each file preloads them into memory at startup
+    # Build command - Multi-model mode with PRELOADING via models-preset.ini
+    # The preset file has "load-on-startup = true" for each model
     cmd = [
         server_path,
         "--port", str(port),
         "--host", host,
         "--threads", str(threads),
         "--n-predict", "8192",
+        "--models-dir", "./models",           # Directory containing all models
+        "--models-max", str(len(gguf_files)), # Max models to keep in memory
     ]
     
-    # Add each model explicitly to PRELOAD them (not lazy load)
-    for model_file in gguf_files:
-        cmd.extend(["--model", str(model_file)])
+    # Use models-preset.ini for preloading configuration (load-on-startup = true)
+    if models_preset.exists():
+        cmd.extend(["--models-preset", str(models_preset)])
     
     # Add custom UI config if available
     if webui_config.exists():
