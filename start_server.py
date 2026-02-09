@@ -83,24 +83,39 @@ def start_multi_model_server():
     port = 7777
     host = "127.0.0.1"
     threads = os.cpu_count() or 4
+    context_size = 32768
     
-    # Models to load (file names = names shown in UI dropdown)
+    # Models to check (in order of preference)
     models = [
-        ("models/Model A (non-thinking).gguf", "Model A (non-thinking)"),
-        ("models/Model B (thinking).gguf", "Model B (thinking)"),
+        "models/Model A (non-thinking).gguf",
+        "models/Model B (thinking).gguf",
+        "models/Qwen3-0.6B-Q4_K_M.gguf",
+        "models/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
     ]
     
-    # Check which models exist
-    available_models = []
-    for model_path, alias in models:
-        if os.path.exists(model_path):
-            available_models.append((model_path, alias))
-            print(f"  ✓ Found: {alias} ({model_path})")
+    # Find first available model
+    model_path = None
+    print("Checking for models...")
+    for m in models:
+        if os.path.exists(m):
+            model_path = m
+            print(f"  ✓ Found: {m}")
+            break
         else:
-            print(f"  ✗ Missing: {alias} ({model_path})")
+            print(f"  ✗ Not found: {m}")
     
-    if not available_models:
-        print("\n✗ No models found! Please download models first.")
+    # Also check for any .gguf file in models folder
+    if not model_path:
+        models_dir = Path("models")
+        if models_dir.exists():
+            for gguf in models_dir.glob("*.gguf"):
+                model_path = str(gguf)
+                print(f"  ✓ Found: {model_path}")
+                break
+    
+    if not model_path:
+        print("\n✗ No models found! Please download a model first.")
+        print("Run: python 1_download_model.py")
         return
     
     print()
@@ -112,23 +127,18 @@ def start_multi_model_server():
         return
     
     print(f"Server: {server_path}")
+    print(f"Model: {model_path}")
     print(f"Port: {port}")
-    print(f"Models loaded: {len(available_models)}")
     print()
     print(f"Access UI at: http://localhost:{port}")
-    print()
-    print("In the UI, click the model dropdown to switch between models!")
     print()
     print("Press Ctrl+C to stop")
     print("=" * 60)
     print()
     
     # Use same UI as llama-cpp-custom (shows appName from webui_settings in both places).
-    # --path: serve from llama-cpp-custom/tools/server/public when present.
-    # --webui-config-file: server sends webui_settings in /props (appName: WorkplaceSLM).
     project_dir = Path(__file__).resolve().parent
     webui_config = project_dir / "webui-config.json"
-    models_preset = project_dir / "models-preset.ini"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
 
     # Make executable on macOS/Linux
@@ -138,21 +148,24 @@ def start_multi_model_server():
         except:
             pass
 
-    # Build command - router server mode with multiple models
+    # Build command - single model mode (works with all llama-server versions)
     cmd = [
         server_path,
+        "--model", model_path,
         "--port", str(port),
         "--host", host,
         "--threads", str(threads),
+        "--ctx-size", str(context_size),
         "--n-predict", "8192",
         "--temp", "0.7",
         "--top-p", "0.9",
-        "--models-dir", "./models",
-        "--models-max", "2",
-        "--webui-config-file", str(webui_config),
     ]
-    if models_preset.exists():
-        cmd.extend(["--models-preset", str(models_preset)])
+    
+    # Add webui config if it exists
+    if webui_config.exists():
+        cmd.extend(["--webui-config-file", str(webui_config)])
+    
+    # Use custom UI if available
     if custom_public.is_dir() and (custom_public / "index.html").exists():
         cmd.extend(["--path", str(custom_public)])
 
