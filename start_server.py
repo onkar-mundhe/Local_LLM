@@ -23,6 +23,7 @@ def find_llama_server():
         possible_paths = [
             "llama-server.exe",
             "llama-bin/llama-server.exe",
+            "llama-bin/bin/llama-server.exe",
             "llama-bin/build/bin/Release/llama-server.exe",
         ]
         
@@ -41,6 +42,8 @@ def find_llama_server():
         possible_paths = [
             "llama-server",
             "llama-bin/llama-server",
+            "llama-bin/bin/llama-server",
+            "llama-bin/build/bin/llama-server",
             "llama-bin/build/bin/Release/llama-server",
             "llama.cpp/build/bin/Release/llama-server",
         ]
@@ -53,10 +56,18 @@ def find_llama_server():
         # Recursive search - find llama-server but NOT llama-server.exe
         llama_bin = Path("llama-bin")
         if llama_bin.exists():
-            for file in llama_bin.rglob("llama-server"):
-                # Skip .exe files and ensure it's the actual binary
-                if file.is_file() and not str(file).endswith('.exe'):
+            for file in llama_bin.rglob("*"):
+                # Look for llama-server binary (exact name match, not .exe)
+                if file.is_file() and file.name == "llama-server":
                     return str(file)
+    
+    # Debug: show what's in llama-bin if not found
+    llama_bin = Path("llama-bin")
+    if llama_bin.exists():
+        print("Debug: Contents of llama-bin folder:")
+        for item in llama_bin.rglob("*"):
+            if item.is_file():
+                print(f"  - {item}")
     
     return None
 

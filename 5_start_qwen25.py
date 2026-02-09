@@ -6,26 +6,48 @@ This model does NOT have thinking/reasoning - responds directly!
 import os
 import subprocess
 import sys
+import platform
 from pathlib import Path
 
 def find_llama_server():
-    """Find llama-server.exe in various possible locations"""
-    possible_paths = [
-        "llama-server.exe",
-        "llama-bin/llama-server.exe",
-        "llama-bin/build/bin/Release/llama-server.exe",
-        "llama.cpp/build/bin/Release/llama-server.exe",
-    ]
+    """Find llama-server executable (cross-platform)"""
+    is_windows = platform.system() == "Windows"
     
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
-    
-    # Search in llama-bin directory recursively
-    llama_bin = Path("llama-bin")
-    if llama_bin.exists():
-        for file in llama_bin.rglob("llama-server.exe"):
-            return str(file)
+    if is_windows:
+        # Windows: look for .exe files
+        possible_paths = [
+            "llama-server.exe",
+            "llama-bin/llama-server.exe",
+            "llama-bin/build/bin/Release/llama-server.exe",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server.exe"):
+                if file.is_file():
+                    return str(file)
+    else:
+        # macOS/Linux: look for binary WITHOUT .exe extension
+        possible_paths = [
+            "llama-server",
+            "llama-bin/llama-server",
+            "llama-bin/build/bin/Release/llama-server",
+            "llama.cpp/build/bin/Release/llama-server",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path) and not path.endswith('.exe'):
+                return path
+        
+        llama_bin = Path("llama-bin")
+        if llama_bin.exists():
+            for file in llama_bin.rglob("llama-server"):
+                if file.is_file() and not str(file).endswith('.exe'):
+                    return str(file)
     
     return None
 
@@ -52,7 +74,7 @@ def start_server():
     # Find llama-server
     server_path = find_llama_server()
     if not server_path:
-        print("✗ Error: llama-server.exe not found")
+        print("✗ Error: llama-server not found")
         print()
         print("Run: python 2_download_llama_binary.py")
         print("Or download manually from:")
@@ -79,6 +101,13 @@ def start_server():
     project_dir = Path(__file__).resolve().parent
     webui_config = project_dir / "webui-config.json"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
+
+    # Make executable on macOS/Linux
+    if platform.system() != "Windows":
+        try:
+            os.chmod(server_path, 0o755)
+        except:
+            pass
 
     # Build command - Qwen2.5 doesn't need reasoning flags
     cmd = [

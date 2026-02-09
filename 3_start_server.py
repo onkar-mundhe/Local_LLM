@@ -106,6 +106,13 @@ def start_server():
     webui_config = project_dir / "webui-config.json"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
 
+    # Make executable on macOS/Linux
+    if platform.system() != "Windows":
+        try:
+            os.chmod(server_path, 0o755)
+        except:
+            pass
+
     # Build command
     cmd = [
         server_path,
