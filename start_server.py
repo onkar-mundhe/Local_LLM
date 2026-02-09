@@ -119,17 +119,19 @@ def start_multi_model_server():
     webui_config = project_dir / "webui-config.json"
     custom_public = project_dir / "llama-cpp-custom" / "tools" / "server" / "public"
 
-    # Build command - Multi-model router mode
-    # This loads all models from the models directory
+    # Build command - Multi-model mode with PRELOADING
+    # Using --model for each file preloads them into memory at startup
     cmd = [
         server_path,
         "--port", str(port),
         "--host", host,
         "--threads", str(threads),
         "--n-predict", "8192",
-        "--models-dir", "./models",      # Load all models from this folder
-        "--models-max", str(len(gguf_files)),  # Max models to load
     ]
+    
+    # Add each model explicitly to PRELOAD them (not lazy load)
+    for model_file in gguf_files:
+        cmd.extend(["--model", str(model_file)])
     
     # Add custom UI config if available
     if webui_config.exists():
