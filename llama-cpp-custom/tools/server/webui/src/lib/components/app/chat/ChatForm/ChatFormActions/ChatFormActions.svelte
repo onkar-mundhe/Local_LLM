@@ -5,7 +5,8 @@
 		ChatFormActionFileAttachments,
 		ChatFormActionRecord,
 		ChatFormActionSubmit,
-		ModelsSelector
+		ModelsSelector,
+		RAGToggle
 	} from '$lib/components/app';
 	import { FileTypeCategory } from '$lib/enums';
 	import { getFileTypeCategory } from '$lib/utils';
@@ -27,6 +28,7 @@
 		onFileUpload?: () => void;
 		onMicClick?: () => void;
 		onStop?: () => void;
+		onRAGClick?: () => void;
 	}
 
 	let {
@@ -39,7 +41,8 @@
 		uploadedFiles = [],
 		onFileUpload,
 		onMicClick,
-		onStop
+		onStop,
+		onRAGClick
 	}: Props = $props();
 
 	let currentConfig = $derived(config());
@@ -171,6 +174,8 @@
 		{hasVisionModality}
 		{onFileUpload}
 	/>
+
+	<RAGToggle onclick={onRAGClick} />
 
 	<ModelsSelector
 		{disabled}

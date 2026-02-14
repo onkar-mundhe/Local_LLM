@@ -1,7 +1,8 @@
-import { DatabaseService, ChatService } from '$lib/services';
+import { DatabaseService, ChatService, RAGService } from '$lib/services';
 import { conversationsStore } from '$lib/stores/conversations.svelte';
 import { config } from '$lib/stores/settings.svelte';
 import { contextSize, isRouterMode } from '$lib/stores/server.svelte';
+import { ragStore } from '$lib/stores/rag.svelte';
 import {
 	selectedModelName,
 	modelsStore,
@@ -656,11 +657,27 @@ class ChatStore {
 		this.setChatLoading(currentConv.id, true);
 		this.clearChatStreaming(currentConv.id);
 
+		// Fetch RAG context if enabled
+		let ragContext: string | null = null;
+		if (ragStore.isAvailable && ragStore.settings.enabled && content.trim()) {
+			try {
+				ragContext = await RAGService.getContext(content.trim(), ragStore.settings.topK);
+			} catch (error) {
+				console.warn('Failed to fetch RAG context:', error);
+			}
+		}
+
 		try {
 			if (isNewConversation) {
 				const rootId = await DatabaseService.createRootMessage(currentConv.id);
 				const currentConfig = config();
-				const systemPrompt = currentConfig.systemMessage?.toString().trim();
+				let systemPrompt = currentConfig.systemMessage?.toString().trim() || '';
+
+				// Inject RAG context into system prompt
+				if (ragContext) {
+					const ragSystemPrefix = `You have access to the following knowledge base context. Use it to answer questions when relevant:\n\n${ragContext}\n\n---\n\n`;
+					systemPrompt = ragSystemPrefix + systemPrompt;
+				}
 
 				if (systemPrompt) {
 					const systemMessage = await DatabaseService.createSystemMessage(
@@ -671,6 +688,10 @@ class ChatStore {
 
 					conversationsStore.addMessageToActive(systemMessage);
 				}
+			} else if (ragContext) {
+				// For existing conversations, we need to update/add system context
+				// For simplicity, we'll prepend context to the user message as a note
+				// A more advanced approach would be to manage a dedicated RAG context message
 			}
 
 			const userMessage = await this.addMessage('user', content, 'text', '-1', extras);

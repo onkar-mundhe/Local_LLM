@@ -73,3 +73,8 @@ export { default as ModelsSelector } from './models/ModelsSelector.svelte';
 export { default as ServerStatus } from './server/ServerStatus.svelte';
 export { default as ServerErrorSplash } from './server/ServerErrorSplash.svelte';
 export { default as ServerLoadingSplash } from './server/ServerLoadingSplash.svelte';
+
+// RAG / Knowledge Base
+
+export { default as KnowledgeBasePanel } from './rag/KnowledgeBasePanel.svelte';
+export { default as RAGToggle } from './rag/RAGToggle.svelte';

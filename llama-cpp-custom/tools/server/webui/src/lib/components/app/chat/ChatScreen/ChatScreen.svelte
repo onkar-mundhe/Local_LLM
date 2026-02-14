@@ -8,8 +8,10 @@
 		DialogEmptyFileAlert,
 		DialogChatError,
 		ServerLoadingSplash,
-		DialogConfirmation
+		DialogConfirmation,
+		KnowledgeBasePanel
 	} from '$lib/components/app';
+	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Alert from '$lib/components/ui/alert';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import {
@@ -68,8 +70,13 @@
 	let showDeleteDialog = $state(false);
 
 	let showEmptyFileDialog = $state(false);
+	let showKnowledgeBase = $state(false);
 
 	let emptyFileNames = $state<string[]>([]);
+
+	function handleRAGClick() {
+		showKnowledgeBase = !showKnowledgeBase;
+	}
 
 	let isEmpty = $derived(
 		showCenteredEmpty && !activeConversation() && activeMessages().length === 0 && !isLoading()
@@ -433,6 +440,7 @@
 					onFileUpload={handleFileUpload}
 					onSend={handleSendMessage}
 					onStop={() => chatStore.stopGeneration()}
+					onRAGClick={handleRAGClick}
 					showHelperText={false}
 					bind:uploadedFiles
 				/>
@@ -491,6 +499,7 @@
 					onFileUpload={handleFileUpload}
 					onSend={handleSendMessage}
 					onStop={() => chatStore.stopGeneration()}
+					onRAGClick={handleRAGClick}
 					showHelperText={true}
 					bind:uploadedFiles
 				/>
@@ -597,6 +606,13 @@
 	open={Boolean(activeErrorDialog)}
 	type={activeErrorDialog?.type ?? 'server'}
 />
+
+<!-- Knowledge Base Panel -->
+<Sheet.Root bind:open={showKnowledgeBase}>
+	<Sheet.Content side="right" class="w-[400px] p-0 sm:max-w-[400px]">
+		<KnowledgeBasePanel onClose={() => (showKnowledgeBase = false)} />
+	</Sheet.Content>
+</Sheet.Root>
 
 <style>
 	.conversation-chat-form {

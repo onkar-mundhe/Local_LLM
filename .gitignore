@@ -1,6 +1,8 @@
 # Python
 venv/
 .venv/
+Data_Retriever_Service/
+rag_service/data/
 __pycache__/
 *.py[cod]
 *.pyo
