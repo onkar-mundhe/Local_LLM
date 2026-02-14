@@ -30,3 +30,4 @@ llama-cpp-custom/tools/server/webui/node_modules/
 Thumbs.db
 desktop.ini
 *.log
+models/Model C (OCR)/

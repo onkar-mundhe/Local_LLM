@@ -76,16 +76,26 @@ def start_multi_model_server():
         print("Run: python 1_download_model.py")
         return
     
-    # Count available models
+    # Count available models (both loose .gguf files and subdirectory-based models)
     gguf_files = list(models_dir.glob("*.gguf"))
-    if not gguf_files:
+    subdir_models = [
+        d for d in models_dir.iterdir()
+        if d.is_dir() and not d.name.startswith(".")
+        and any(f.suffix == ".gguf" and "mmproj" not in f.name for f in d.iterdir())
+    ]
+    total_models = len(gguf_files) + len(subdir_models)
+
+    if total_models == 0:
         print("✗ No .gguf models found in models/ folder")
         print("Run: python 1_download_model.py")
         return
     
-    print(f"Found {len(gguf_files)} model(s):")
+    print(f"Found {total_models} model(s):")
     for f in gguf_files:
         print(f"  ✓ {f.name}")
+    for d in subdir_models:
+        model_files = [f.name for f in d.iterdir() if f.suffix == ".gguf"]
+        print(f"  ✓ {d.name}/ ({', '.join(model_files)})")
     print()
     
     # Find server
@@ -104,7 +114,7 @@ def start_multi_model_server():
             pass
     
     print(f"Server: {server_path}")
-    print(f"Models: {len(gguf_files)} loaded from ./models/")
+    print(f"Models: {total_models} loaded from ./models/")
     print(f"Port: {port}")
     print()
     print(f"Access UI at: http://localhost:{port}")
@@ -129,8 +139,9 @@ def start_multi_model_server():
         "--threads", str(threads),
         "--n-predict", "8192",
         "--models-dir", "./models",           # Directory containing all models
-        "--models-max", str(len(gguf_files)), # Max models to keep in memory
+        "--models-max", str(total_models),    # Max models to keep in memory
     ]
+
     
     # Use models-preset.ini for preloading configuration (load-on-startup = true)
     if models_preset.exists():
