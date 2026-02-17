@@ -6,7 +6,7 @@ Two files are required:
   - Qwen2-VL-2B-Instruct-Q8_0.gguf     (main language model, ~1.65 GB)
   - mmproj-Qwen2-VL-2B-Instruct-Q8_0.gguf (multimodal projector, ~710 MB)
 
-The files are placed inside "models/Model D (Vision)" so that llama-server's
+The files are placed inside "models/Model C (Vision)" so that llama-server's
 --models-dir auto-detection picks up the mmproj file correctly.
 
 Source: https://huggingface.co/ggml-org/Qwen2-VL-2B-Instruct-GGUF
@@ -30,7 +30,7 @@ MODEL_FILES = [
 ]
 
 # Place inside a subdirectory so llama-server auto-associates the mmproj file
-MODELS_DIR = Path(__file__).resolve().parent / "models" / "Model D (Vision)"
+MODELS_DIR = Path(__file__).resolve().parent / "models" / "Model C (Vision)"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -72,7 +72,7 @@ def download_qwen2vl():
     print(f"  Model files are in: {MODELS_DIR.absolute()}")
     print()
     print("  Next: run 'python start_server.py' to start the server.")
-    print("  Select 'Model D (Vision)' in the UI dropdown to use it.")
+    print("  Select 'Model C (Vision)' in the UI dropdown to use it.")
     print("=" * 60)
 
 
