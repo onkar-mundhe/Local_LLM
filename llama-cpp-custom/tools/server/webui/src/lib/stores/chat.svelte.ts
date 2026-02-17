@@ -476,12 +476,48 @@ class ChatStore {
 		);
 	}
 
+	private injectRagContextIntoMessages(
+		messages: DatabaseMessage[],
+		ragContext?: string | null
+	): DatabaseMessage[] {
+		if (!ragContext?.trim()) return messages;
+
+		const ragPrefix = `You have access to the following knowledge base context. Use it to answer questions when relevant:\n\n${ragContext}\n\n---\n\n`;
+
+		const firstSystem = messages.find((m) => m.type === 'system');
+		if (firstSystem) {
+			return messages.map((m) =>
+				m.id === firstSystem.id
+					? { ...m, content: ragPrefix + (m.content || '') }
+					: m
+			);
+		}
+
+		const firstMsg = messages[0];
+		const syntheticSystem: DatabaseMessage = {
+			id: `rag-${Date.now()}`,
+			convId: firstMsg?.convId || '',
+			parent: '-1',
+			type: 'system',
+			role: 'system',
+			content: ragPrefix.trim(),
+			extra: undefined,
+			timestamp: Date.now(),
+			thinking: '',
+			toolCalls: '',
+			children: [],
+			model: null
+		} as DatabaseMessage;
+		return [syntheticSystem, ...messages];
+	}
+
 	private async streamChatCompletion(
 		allMessages: DatabaseMessage[],
 		assistantMessage: DatabaseMessage,
 		onComplete?: (content: string) => Promise<void>,
 		onError?: (error: Error) => void,
-		modelOverride?: string | null
+		modelOverride?: string | null,
+		ragContext?: string | null
 	): Promise<void> {
 		// Ensure model props are cached before streaming (for correct n_ctx in processing info)
 		if (isRouterMode()) {
@@ -518,8 +554,10 @@ class ChatStore {
 
 		const abortController = this.getOrCreateAbortController(assistantMessage.convId);
 
+		const messagesToSend = this.injectRagContextIntoMessages(allMessages, ragContext);
+
 		await ChatService.sendMessage(
-			allMessages,
+			messagesToSend,
 			{
 				...this.getApiOptions(),
 				...(modelOverride ? { model: modelOverride } : {}),
@@ -671,14 +709,9 @@ class ChatStore {
 			if (isNewConversation) {
 				const rootId = await DatabaseService.createRootMessage(currentConv.id);
 				const currentConfig = config();
-				let systemPrompt = currentConfig.systemMessage?.toString().trim() || '';
+				const systemPrompt = currentConfig.systemMessage?.toString().trim() || '';
 
-				// Inject RAG context into system prompt
-				if (ragContext) {
-					const ragSystemPrefix = `You have access to the following knowledge base context. Use it to answer questions when relevant:\n\n${ragContext}\n\n---\n\n`;
-					systemPrompt = ragSystemPrefix + systemPrompt;
-				}
-
+				// Store only user's system prompt - RAG context is injected at API send time, not displayed
 				if (systemPrompt) {
 					const systemMessage = await DatabaseService.createSystemMessage(
 						currentConv.id,
@@ -688,10 +721,6 @@ class ChatStore {
 
 					conversationsStore.addMessageToActive(systemMessage);
 				}
-			} else if (ragContext) {
-				// For existing conversations, we need to update/add system context
-				// For simplicity, we'll prepend context to the user message as a note
-				// A more advanced approach would be to manage a dedicated RAG context message
 			}
 
 			const userMessage = await this.addMessage('user', content, 'text', '-1', extras);
@@ -706,7 +735,11 @@ class ChatStore {
 			conversationsStore.addMessageToActive(assistantMessage);
 			await this.streamChatCompletion(
 				conversationsStore.activeMessages.slice(0, -1),
-				assistantMessage
+				assistantMessage,
+				undefined,
+				undefined,
+				undefined,
+				ragContext
 			);
 		} catch (error) {
 			if (this.isAbortError(error)) {

@@ -17,7 +17,9 @@ from app.models.schemas import (
     DocumentResponse,
     DocumentListResponse,
     DocumentUploadResponse,
-    DocumentDeleteResponse
+    DocumentDeleteResponse,
+    DocumentToggleRequest,
+    DocumentToggleResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -145,6 +147,39 @@ async def delete_document(
         raise HTTPException(
             status_code=500,
             detail="Failed to delete document"
+        )
+
+
+@router.patch("/{doc_id}/toggle", response_model=DocumentToggleResponse)
+async def toggle_document(doc_id: int, request: DocumentToggleRequest):
+    """
+    Toggle whether a document is enabled for RAG queries.
+    
+    When disabled, the document remains in the knowledge base but is
+    excluded from search results and RAG context.
+    """
+    # Check if document exists
+    doc = document_db.get_document(doc_id)
+    if not doc:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Document {doc_id} not found"
+        )
+    
+    success = document_db.toggle_document_enabled(doc_id, request.enabled)
+    
+    if success:
+        state = "enabled" if request.enabled else "disabled"
+        return DocumentToggleResponse(
+            success=True,
+            id=doc_id,
+            enabled=request.enabled,
+            message=f"Document '{doc['filename']}' {state} for knowledge search"
+        )
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update document state"
         )
 
 

@@ -3,6 +3,7 @@ venv/
 .venv/
 Data_Retriever_Service/
 rag_service/data/
+rag_service/venv/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -33,3 +34,4 @@ Thumbs.db
 desktop.ini
 *.log
 models/Model C (OCR)/
+models/

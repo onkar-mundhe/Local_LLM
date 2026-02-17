@@ -31,6 +31,9 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+# Enable DEBUG for retriever and vector_db to diagnose search/filtering issues
+logging.getLogger("app.services.retriever").setLevel(logging.DEBUG)
+logging.getLogger("app.database.vector_db").setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

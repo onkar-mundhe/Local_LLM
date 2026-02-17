@@ -34,6 +34,7 @@ class VectorDB:
     _instance = None
     _embeddings = None
     _db_connection = None
+    _vector_store_cache: Dict[str, LangChainLanceDB] = {}
     
     def __new__(cls):
         """Singleton pattern to reuse connections and embeddings"""
@@ -47,6 +48,7 @@ class VectorDB:
             return
         
         self._initialized = True
+        self._vector_store_cache = {}
         self._init_embeddings()
         self._init_db()
     
@@ -80,23 +82,45 @@ class VectorDB:
         """Get the LanceDB connection"""
         return self._db_connection
     
-    def get_or_create_table(self, table_name: str = None) -> LangChainLanceDB:
+    def get_or_create_table(self, table_name: str = None, mode: str = "append") -> LangChainLanceDB:
         """
         Get or create a LangChain LanceDB vector store for a table.
         
+        IMPORTANT: mode must be "append" (default) so that add_documents()
+        appends to existing data instead of overwriting the entire table.
+        LangChain's LanceDB wrapper defaults to "overwrite" which destroys
+        all existing rows on every add_documents() call.
+        
         Args:
             table_name: Name of the table/collection (default: config.DEFAULT_COLLECTION)
+            mode: "append" to preserve existing data, "overwrite" to replace table
         
         Returns:
             LangChainLanceDB vector store instance
         """
         table_name = table_name or config.DEFAULT_COLLECTION
         
-        return LangChainLanceDB(
-            connection=self._db_connection,
-            embedding=self._embeddings,
-            table_name=table_name
-        )
+        cache_key = f"{table_name}_{mode}"
+        if cache_key not in self._vector_store_cache:
+            self._vector_store_cache[cache_key] = LangChainLanceDB(
+                connection=self._db_connection,
+                embedding=self._embeddings,
+                table_name=table_name,
+                mode=mode
+            )
+            logger.debug(f"Created LanceDB vector store for table '{table_name}' with mode='{mode}'")
+        
+        return self._vector_store_cache[cache_key]
+    
+    def _invalidate_cache(self, table_name: str = None):
+        """
+        Invalidate all cached vector store instances for a table so the next
+        access picks up any schema/data changes.
+        """
+        table_name = table_name or config.DEFAULT_COLLECTION
+        keys_to_remove = [k for k in self._vector_store_cache if k.startswith(table_name + "_")]
+        for key in keys_to_remove:
+            self._vector_store_cache.pop(key, None)
     
     def add_documents(
         self,
@@ -106,6 +130,10 @@ class VectorDB:
         """
         Add documents to the vector store.
         
+        Uses mode="append" to preserve existing data in the table.
+        Without this, LangChain's LanceDB wrapper defaults to "overwrite"
+        which destroys all existing rows on every call.
+        
         Args:
             documents: List of LangChain Document objects
             table_name: Target table name
@@ -114,11 +142,14 @@ class VectorDB:
             List of document IDs
         """
         table_name = table_name or config.DEFAULT_COLLECTION
-        vector_store = self.get_or_create_table(table_name)
+        vector_store = self.get_or_create_table(table_name, mode="append")
         
         # Add documents and get IDs
         ids = vector_store.add_documents(documents)
         logger.info(f"Added {len(documents)} documents to table '{table_name}'")
+        
+        # Invalidate cache so subsequent searches pick up the updated table
+        self._invalidate_cache(table_name)
         
         return ids
     
@@ -201,6 +232,12 @@ class VectorDB:
         else:
             results = vector_store.similarity_search_with_score(query, k=k)
         
+        if results:
+            logger.debug(
+                f"similarity_search_with_score returned {len(results)} results. "
+                f"First result metadata: {results[0][0].metadata}"
+            )
+        
         return results
     
     def delete_by_source(self, source: str, table_name: str = None) -> bool:
@@ -220,9 +257,37 @@ class VectorDB:
             # Get the table directly from LanceDB
             if table_name in self._db_connection.table_names():
                 table = self._db_connection.open_table(table_name)
-                # Delete rows where source matches
-                table.delete(f"source = '{source}'")
-                logger.info(f"Deleted documents with source '{source}' from table '{table_name}'")
+                
+                # LanceDB stores metadata as a single JSON column, not individual fields.
+                # We need to find rows matching this source and delete by their IDs.
+                import json
+                df = table.to_pandas()
+                
+                # Find IDs of rows whose metadata contains this source
+                ids_to_delete = []
+                for _, row in df.iterrows():
+                    metadata = row.get('metadata', '')
+                    if isinstance(metadata, str):
+                        try:
+                            meta_dict = json.loads(metadata)
+                            if meta_dict.get('source') == source:
+                                ids_to_delete.append(row['id'])
+                        except (json.JSONDecodeError, KeyError):
+                            continue
+                    elif isinstance(metadata, dict):
+                        if metadata.get('source') == source:
+                            ids_to_delete.append(row['id'])
+                
+                if ids_to_delete:
+                    # Delete rows by their IDs
+                    id_list = ", ".join([f"'{id_val}'" for id_val in ids_to_delete])
+                    table.delete(f"id IN ({id_list})")
+                    logger.info(f"Deleted {len(ids_to_delete)} chunks with source '{source}' from table '{table_name}'")
+                    # Invalidate cache after deletion
+                    self._invalidate_cache(table_name)
+                else:
+                    logger.info(f"No chunks found with source '{source}' in table '{table_name}'")
+                
                 return True
             return False
         except Exception as e:

@@ -24,6 +24,7 @@ class DocumentResponse(BaseModel):
     upload_date: Optional[str] = None
     status: str = "active"
     collection_name: str = "documents"
+    enabled: bool = True
 
 
 class DocumentListResponse(BaseModel):
@@ -46,6 +47,19 @@ class DocumentDeleteResponse(BaseModel):
     """Response after document deletion"""
     success: bool
     id: int
+    message: str
+
+
+class DocumentToggleRequest(BaseModel):
+    """Request to toggle document enabled state"""
+    enabled: bool = Field(..., description="Whether the document should be enabled for RAG queries")
+
+
+class DocumentToggleResponse(BaseModel):
+    """Response after toggling document enabled state"""
+    success: bool
+    id: int
+    enabled: bool
     message: str
 
 

@@ -17,6 +17,7 @@ export interface RAGDocument {
 	upload_date: string | null;
 	status: string;
 	collection_name: string;
+	enabled: boolean;
 }
 
 export interface RAGSearchResult {
@@ -112,6 +113,22 @@ export class RAGService {
 		try {
 			const response = await fetch(`${this.baseUrl}/documents/${id}`, {
 				method: 'DELETE'
+			});
+			return response.ok;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Toggle document enabled state for RAG queries
+	 */
+	static async toggleDocument(id: number, enabled: boolean): Promise<boolean> {
+		try {
+			const response = await fetch(`${this.baseUrl}/documents/${id}/toggle`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ enabled })
 			});
 			return response.ok;
 		} catch {

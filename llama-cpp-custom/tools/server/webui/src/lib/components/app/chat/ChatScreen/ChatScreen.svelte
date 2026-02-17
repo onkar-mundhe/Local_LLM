@@ -607,9 +607,14 @@
 	type={activeErrorDialog?.type ?? 'server'}
 />
 
-<!-- Knowledge Base Panel -->
+<!-- Knowledge Base Panel - z-[950] above sidebar trigger (z-[900]) on mobile -->
 <Sheet.Root bind:open={showKnowledgeBase}>
-	<Sheet.Content side="right" class="w-[400px] p-0 sm:max-w-[400px]">
+	<Sheet.Content
+		side="right"
+		class="z-[950] w-full max-w-[100vw] p-0 sm:w-[400px] sm:max-w-[400px]"
+		hideClose={true}
+		overlayClass="z-[950]"
+	>
 		<KnowledgeBasePanel onClose={() => (showKnowledgeBase = false)} />
 	</Sheet.Content>
 </Sheet.Root>

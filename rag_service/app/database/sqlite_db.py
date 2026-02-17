@@ -50,9 +50,16 @@ class DocumentDB:
                     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     status TEXT DEFAULT 'active',
                     collection_name TEXT DEFAULT 'documents',
-                    metadata TEXT
+                    metadata TEXT,
+                    enabled INTEGER DEFAULT 1
                 )
             """)
+            
+            # Migrate: add 'enabled' column if missing (existing databases)
+            try:
+                conn.execute("ALTER TABLE documents ADD COLUMN enabled INTEGER DEFAULT 1")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             
             # Create index for faster lookups
             conn.execute("""
@@ -62,6 +69,10 @@ class DocumentDB:
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_documents_collection 
                 ON documents(collection_name)
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_documents_enabled 
+                ON documents(enabled)
             """)
     
     def add_document(
@@ -179,6 +190,51 @@ class DocumentDB:
                     DELETE FROM documents WHERE id = ?
                 """, (doc_id,))
             return cursor.rowcount > 0
+    
+    def toggle_document_enabled(self, doc_id: int, enabled: bool) -> bool:
+        """
+        Toggle whether a document is enabled for RAG queries.
+        
+        Args:
+            doc_id: Document ID
+            enabled: True to enable, False to disable
+        
+        Returns:
+            bool: True if document was updated
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                UPDATE documents 
+                SET enabled = ?
+                WHERE id = ? AND status = 'active'
+            """, (1 if enabled else 0, doc_id))
+            return cursor.rowcount > 0
+    
+    def get_enabled_document_filenames(
+        self,
+        collection_name: str = None,
+        status: str = "active"
+    ) -> List[str]:
+        """
+        Get filenames of all enabled documents.
+        
+        Returns:
+            List of filenames that are enabled for RAG queries
+        """
+        with self._get_connection() as conn:
+            if collection_name:
+                cursor = conn.execute("""
+                    SELECT filename FROM documents 
+                    WHERE collection_name = ? AND status = ? AND enabled = 1
+                    ORDER BY upload_date DESC
+                """, (collection_name, status))
+            else:
+                cursor = conn.execute("""
+                    SELECT filename FROM documents 
+                    WHERE status = ? AND enabled = 1
+                    ORDER BY upload_date DESC
+                """, (status,))
+            return [row["filename"] for row in cursor.fetchall()]
     
     def get_document_count(self, collection_name: str = None, status: str = "active") -> int:
         """Get count of documents"""

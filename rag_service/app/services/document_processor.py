@@ -49,12 +49,14 @@ class DocumentProcessor:
     }
     
     def __init__(self):
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=config.CHUNK_SIZE,
-            chunk_overlap=config.CHUNK_OVERLAP,
-            length_function=len,
-            separators=["\n\n", "\n", ". ", " ", ""]
-        )
+        # ── Character-based chunking (commented out for testing page-wise) ──
+        # self.text_splitter = RecursiveCharacterTextSplitter(
+        #     chunk_size=config.CHUNK_SIZE,
+        #     chunk_overlap=config.CHUNK_OVERLAP,
+        #     length_function=len,
+        #     separators=["\n\n", "\n", ". ", " ", ""]
+        # )
+        pass
     
     def get_file_type(self, filename: str) -> Optional[str]:
         """Get file type from filename extension"""
@@ -105,17 +107,23 @@ class DocumentProcessor:
         Returns:
             List of chunked Document objects
         """
-        chunks = self.text_splitter.split_documents(documents)
+        # ── Character-based chunking (commented out for testing page-wise) ──
+        # chunks = self.text_splitter.split_documents(documents)
+
+        # ── Page-wise chunking: 1 page = 1 chunk ──
+        chunks = documents  # Use pages directly as chunks
         
-        # Ensure source metadata is set on all chunks
+        # Normalize metadata to only include fields that match the LanceDB schema
+        # PDF loaders may add extra fields (author, creator, etc.) that cause schema mismatch
         for i, chunk in enumerate(chunks):
-            chunk.metadata['source'] = source
-            chunk.metadata['chunk_index'] = i
-            # Keep page number if available
-            if 'page' not in chunk.metadata:
-                chunk.metadata['page'] = 0
+            normalized_metadata = {
+                'source': source,
+                'chunk_index': i,
+                'page': chunk.metadata.get('page', i)
+            }
+            chunk.metadata = normalized_metadata
         
-        logger.info(f"Split {len(documents)} documents into {len(chunks)} chunks")
+        logger.info(f"Page-wise chunking: {len(documents)} pages → {len(chunks)} chunks")
         return chunks
     
     def process_file(
