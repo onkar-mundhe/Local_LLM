@@ -78,3 +78,7 @@ export { default as ServerLoadingSplash } from './server/ServerLoadingSplash.sve
 
 export { default as KnowledgeBasePanel } from './rag/KnowledgeBasePanel.svelte';
 export { default as RAGToggle } from './rag/RAGToggle.svelte';
+
+// Field Extraction
+
+export { default as FieldExtraction } from './extraction/FieldExtraction.svelte';

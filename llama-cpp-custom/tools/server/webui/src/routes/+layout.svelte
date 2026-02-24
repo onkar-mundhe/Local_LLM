@@ -21,6 +21,7 @@
 
 	let isChatRoute = $derived(page.route.id === '/chat/[id]');
 	let isHomeRoute = $derived(page.route.id === '/');
+	let isExtractRoute = $derived(page.route.id === '/extract');
 	let isNewChatMode = $derived(page.url.searchParams.get('new_chat') === 'true');
 	let showSidebarByDefault = $derived(activeMessages().length > 0 || isLoading());
 	let alwaysShowSidebarOnDesktop = $derived(config().alwaysShowSidebarOnDesktop);
@@ -87,11 +88,11 @@
 			return;
 		}
 
-		if (isHomeRoute && !isNewChatMode) {
-			// Auto-collapse sidebar when navigating to home route (but not in new chat mode)
+		if (isExtractRoute) {
+			sidebarOpen = false;
+		} else if (isHomeRoute && !isNewChatMode) {
 			sidebarOpen = false;
 		} else if (isHomeRoute && isNewChatMode) {
-			// Keep sidebar open in new chat mode
 			sidebarOpen = true;
 		} else if (isChatRoute) {
 			// On chat routes, only auto-show sidebar if setting is enabled
@@ -146,7 +147,7 @@
 		const apiKey = config().apiKey;
 
 		if (
-			(page.route.id === '/' || page.route.id === '/chat/[id]') &&
+			(page.route.id === '/' || page.route.id === '/chat/[id]' || page.route.id === '/extract') &&
 			page.status !== 401 &&
 			page.status !== 403
 		) {
