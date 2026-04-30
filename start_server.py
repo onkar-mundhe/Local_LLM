@@ -43,10 +43,11 @@ def start_multi_model_server():
     host = "127.0.0.1"
     threads = os.cpu_count() or 4
     
-    # Models to load (file names = names shown in UI dropdown)
+    # Models to probe for startup messages (router lists every .gguf under ./models)
     models = [
         ("models/Model A (non-thinking).gguf", "Model A (non-thinking)"),
         ("models/Model B (thinking).gguf", "Model B (thinking)"),
+        ("models/qwen2-7b-instruct-q4_k_m.gguf", "Qwen2-7B-Instruct Q4_K_M"),
     ]
     
     # Check which models exist
@@ -100,7 +101,7 @@ def start_multi_model_server():
         "--temp", "0.7",
         "--top-p", "0.9",
         "--models-dir", "./models",
-        "--models-max", "2",
+        "--models-max", str(max(4, len(available_models))),
         "--webui-config-file", str(webui_config),
     ]
     if models_preset.exists():

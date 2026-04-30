@@ -7,6 +7,7 @@
 		isTextFile,
 		isImageFile,
 		isPdfFile,
+		isDocxFile,
 		isAudioFile,
 		getLanguageFromFilename
 	} from '$lib/utils';
@@ -37,6 +38,7 @@
 	let isAudio = $derived(isAudioFile(attachment, uploadedFile));
 	let isImage = $derived(isImageFile(attachment, uploadedFile));
 	let isPdf = $derived(isPdfFile(attachment, uploadedFile));
+	let isDocx = $derived(isDocxFile(attachment, uploadedFile));
 	let isText = $derived(isTextFile(attachment, uploadedFile));
 
 	let displayPreview = $derived(
@@ -53,7 +55,7 @@
 
 	let IconComponent = $derived(() => {
 		if (isImage) return Image;
-		if (isText || isPdf) return FileText;
+		if (isText || isPdf || isDocx) return FileText;
 		if (isAudio) return Music;
 
 		return FileIcon;
@@ -240,7 +242,7 @@
 					</div>
 				</div>
 			{/if}
-		{:else if (isText || (isPdf && pdfViewMode === 'text')) && displayTextContent}
+		{:else if (isText || isDocx || (isPdf && pdfViewMode === 'text')) && displayTextContent}
 			<SyntaxHighlightedCode code={displayTextContent} {language} maxWidth="calc(69rem - 2rem)" />
 		{:else if isAudio}
 			<div class="flex items-center justify-center p-8">

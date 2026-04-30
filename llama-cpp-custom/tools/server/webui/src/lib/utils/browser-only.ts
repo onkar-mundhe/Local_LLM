@@ -22,6 +22,8 @@ export {
 	isApplicationMimeType
 } from './pdf-processing';
 
+export { convertDocxToText, isDocxFile } from './docx-processing';
+
 // File conversion utilities (depends on pdf-processing)
 export { parseFilesToMessageExtras, type FileProcessingResult } from './convert-files-to-extra';
 

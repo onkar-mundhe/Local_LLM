@@ -11,6 +11,7 @@ export {
 	FileExtensionImage,
 	FileExtensionAudio,
 	FileExtensionPdf,
+	FileExtensionDocx,
 	FileExtensionText,
 	MimeTypeApplication,
 	MimeTypeAudio,

@@ -23,7 +23,7 @@
 
 	const fileUploadTooltipText = $derived.by(() => {
 		return !hasVisionModality
-			? 'Text files and PDFs supported. Images, audio, and video require vision models.'
+			? 'Text files, PDFs, and Word (.docx) supported. Images, audio, and video require vision models.'
 			: 'Attach files';
 	});
 </script>
@@ -118,6 +118,15 @@
 					</Tooltip.Content>
 				{/if}
 			</Tooltip.Root>
+
+			<DropdownMenu.Item
+				class="flex cursor-pointer items-center gap-2"
+				onclick={() => onFileUpload?.()}
+			>
+				<FILE_TYPE_ICONS.docx class="h-4 w-4" />
+
+				<span>Word (.docx)</span>
+			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 </div>

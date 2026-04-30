@@ -6,6 +6,7 @@ import { config, settingsStore } from '$lib/stores/settings.svelte';
 import { modelsStore } from '$lib/stores/models.svelte';
 import { getFileTypeCategory } from '$lib/utils';
 import { readFileAsText, isLikelyTextFile } from './text-files';
+import { convertDocxToText, isDocxFile } from './docx-processing';
 import { toast } from 'svelte-sonner';
 
 function readFileAsBase64(file: File): Promise<string> {
@@ -75,6 +76,22 @@ export async function parseFilesToMessageExtras(
 				});
 			} catch (error) {
 				console.error(`Failed to process audio file ${file.name}:`, error);
+			}
+		} else if (isDocxFile(file.file)) {
+			try {
+				const content = await convertDocxToText(file.file);
+				if (content.trim() === '') {
+					console.warn(`DOCX ${file.name} is empty after extraction and will be skipped`);
+					emptyFiles.push(file.name);
+				} else {
+					extras.push({
+						type: AttachmentType.TEXT,
+						name: file.name,
+						content
+					});
+				}
+			} catch (error) {
+				console.error(`Failed to process DOCX file ${file.name}:`, error);
 			}
 		} else if (getFileTypeCategory(file.type) === FileTypeCategory.PDF) {
 			try {
