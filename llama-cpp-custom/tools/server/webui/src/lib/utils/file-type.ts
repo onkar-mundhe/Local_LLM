@@ -6,6 +6,7 @@ import {
 } from '$lib/constants/supported-file-types';
 import {
 	FileExtensionAudio,
+	FileExtensionDocx,
 	FileExtensionImage,
 	FileExtensionPdf,
 	FileExtensionText,
@@ -38,6 +39,11 @@ export function getFileTypeCategory(mimeType: string): FileTypeCategory | null {
 		// PDF
 		case MimeTypeApplication.PDF:
 			return FileTypeCategory.PDF;
+
+		// Word (Open XML)
+		case MimeTypeApplication.DOCX:
+		case MimeTypeApplication.DOCM:
+			return FileTypeCategory.DOCX;
 
 		// Text
 		case MimeTypeText.PLAIN:
@@ -113,6 +119,9 @@ export function getFileTypeCategoryByExtension(filename: string): FileTypeCatego
 		case FileExtensionPdf.PDF:
 			return FileTypeCategory.PDF;
 
+		case FileExtensionDocx.DOCX:
+			return FileTypeCategory.DOCX;
+
 		// Text
 		case FileExtensionText.TXT:
 		case FileExtensionText.MD:
@@ -185,6 +194,10 @@ export function getFileTypeByExtension(filename: string): string | null {
 		}
 	}
 
+	if (extension === FileExtensionDocx.DOCX) {
+		return `${FileTypeCategory.DOCX}:docx`;
+	}
+
 	for (const [key, type] of Object.entries(TEXT_FILE_TYPES)) {
 		if ((type.extensions as readonly string[]).includes(extension)) {
 			return `${FileTypeCategory.TEXT}:${key}`;
@@ -201,7 +214,8 @@ export function isFileTypeSupported(filename: string, mimeType?: string): boolea
 		if (
 			category === FileTypeCategory.IMAGE ||
 			category === FileTypeCategory.AUDIO ||
-			category === FileTypeCategory.PDF
+			category === FileTypeCategory.PDF ||
+			category === FileTypeCategory.DOCX
 		) {
 			return true;
 		}
@@ -212,7 +226,8 @@ export function isFileTypeSupported(filename: string, mimeType?: string): boolea
 	if (
 		extCategory === FileTypeCategory.IMAGE ||
 		extCategory === FileTypeCategory.AUDIO ||
-		extCategory === FileTypeCategory.PDF
+		extCategory === FileTypeCategory.PDF ||
+		extCategory === FileTypeCategory.DOCX
 	) {
 		return true;
 	}

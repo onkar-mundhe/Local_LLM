@@ -98,6 +98,7 @@ class ModelsStore {
 		// Simplify known model names for better display
 		if (fileName) {
 			const lowerName = fileName.toLowerCase();
+			if (lowerName.includes('qwen2-7b-instruct')) return 'Qwen2 7B Instruct';
 			if (lowerName.includes('qwen')) return 'Qwen3';
 			if (lowerName.includes('llama')) return 'Llama';
 			if (lowerName.includes('mistral')) return 'Mistral';

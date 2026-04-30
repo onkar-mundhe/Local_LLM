@@ -1,5 +1,6 @@
 import { AttachmentType, FileTypeCategory } from '$lib/enums';
 import { getFileTypeCategory, getFileTypeCategoryByExtension } from '$lib/utils';
+import { isDocxFile as isDocxFileByContent } from './docx-processing';
 
 /**
  * Gets the file type category from an uploaded file, checking both MIME type and extension
@@ -80,6 +81,25 @@ export function isPdfFile(
 		return attachment.type === AttachmentType.PDF;
 	}
 
+	return false;
+}
+
+/**
+ * Word .docx upload (by MIME or extension). Stored messages use TEXT extras for DOCX body.
+ */
+export function isDocxFile(
+	attachment?: DatabaseMessageExtra,
+	uploadedFile?: ChatUploadedFile
+): boolean {
+	if (uploadedFile?.file) {
+		return isDocxFileByContent(uploadedFile.file);
+	}
+	if (uploadedFile?.name) {
+		return uploadedFile.name.toLowerCase().endsWith('.docx');
+	}
+	if (attachment?.name) {
+		return attachment.name.toLowerCase().endsWith('.docx');
+	}
 	return false;
 }
 

@@ -6,6 +6,7 @@ import { settingsStore } from '$lib/stores/settings.svelte';
 import { toast } from 'svelte-sonner';
 import { getFileTypeCategory } from '$lib/utils';
 import { convertPDFToText } from './pdf-processing';
+import { convertDocxToText, isDocxFile } from './docx-processing';
 
 /**
  * Read a file as a data URL (base64 encoded)
@@ -41,7 +42,8 @@ function readFileAsUTF8(file: File): Promise<string> {
  * This function processes various file types and generates appropriate previews:
  * - Images: Base64 data URLs with format normalization (SVG/WebP → PNG)
  * - Text files: UTF-8 content extraction
- * - PDFs: Metadata only (processed later in conversion pipeline)
+ * - PDFs: Text extraction for preview (full pipeline in conversion step)
+ * - DOCX: Plain text extraction for preview
  * - Audio: Base64 data URLs for preview
  *
  * @param files - Array of File objects to process
@@ -83,6 +85,14 @@ export async function processFilesToChatUploaded(
 				}
 
 				results.push({ ...base, preview });
+			} else if (isDocxFile(file)) {
+				try {
+					const textContent = await convertDocxToText(file);
+					results.push({ ...base, textContent });
+				} catch (err) {
+					console.warn('Failed to extract text from DOCX, adding without content:', err);
+					results.push(base);
+				}
 			} else if (getFileTypeCategory(file.type) === FileTypeCategory.PDF) {
 				// Extract text content from PDF for preview
 				try {

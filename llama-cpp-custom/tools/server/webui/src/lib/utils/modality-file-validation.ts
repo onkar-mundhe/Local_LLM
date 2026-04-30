@@ -42,6 +42,9 @@ export function isFileTypeSupportedByModel(
 			// PDFs are always supported (will be processed as text for non-vision models)
 			return true;
 
+		case FileTypeCategory.DOCX:
+			return true;
+
 		case FileTypeCategory.IMAGE:
 			// Images require vision support
 			return capabilities.hasVision;
@@ -98,6 +101,7 @@ export function filterFilesByModalities(
 
 			case FileTypeCategory.TEXT:
 			case FileTypeCategory.PDF:
+			case FileTypeCategory.DOCX:
 				// Always supported
 				break;
 
@@ -146,7 +150,7 @@ export function generateModalityErrorMessage(
 	}
 
 	// Add helpful information about what is supported
-	const supportedTypes: string[] = ['text files', 'PDFs'];
+	const supportedTypes: string[] = ['text files', 'PDFs', 'Word documents (.docx)'];
 	if (hasVision) supportedTypes.push('images');
 	if (hasAudio) supportedTypes.push('audio files');
 

@@ -16,7 +16,7 @@ export {
 	getAttachmentDisplayItems,
 	type AttachmentDisplayItemsOptions
 } from './attachment-display';
-export { isTextFile, isImageFile, isPdfFile, isAudioFile } from './attachment-type';
+export { isTextFile, isImageFile, isPdfFile, isDocxFile, isAudioFile } from './attachment-type';
 
 // Textarea utilities
 export { default as autoResizeTextarea } from './autoresize-textarea';

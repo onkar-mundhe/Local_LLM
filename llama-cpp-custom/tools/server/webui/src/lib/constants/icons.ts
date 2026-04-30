@@ -16,7 +16,8 @@ export const FILE_TYPE_ICONS = {
 	[FileTypeCategory.IMAGE]: ImageIcon,
 	[FileTypeCategory.AUDIO]: AudioIcon,
 	[FileTypeCategory.TEXT]: FileTextIcon,
-	[FileTypeCategory.PDF]: FileIcon
+	[FileTypeCategory.PDF]: FileIcon,
+	[FileTypeCategory.DOCX]: FileTextIcon
 } as const;
 
 export const DEFAULT_FILE_ICON = FileIcon;

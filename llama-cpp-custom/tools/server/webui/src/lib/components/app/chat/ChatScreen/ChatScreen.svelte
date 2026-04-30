@@ -301,7 +301,7 @@
 		const allUnsupportedFiles = [...generallyUnsupported, ...unsupportedFiles];
 
 		if (allUnsupportedFiles.length > 0) {
-			const supportedTypes: string[] = ['text files', 'PDFs'];
+			const supportedTypes: string[] = ['text files', 'PDFs', 'Word (.docx)'];
 
 			if (hasVisionModality) supportedTypes.push('images');
 			if (hasAudioModality) supportedTypes.push('audio files');

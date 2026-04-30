@@ -8,6 +8,7 @@ export enum FileTypeCategory {
 	IMAGE = 'image',
 	AUDIO = 'audio',
 	PDF = 'pdf',
+	DOCX = 'docx',
 	TEXT = 'text'
 }
 
@@ -89,6 +90,10 @@ export enum FileExtensionPdf {
 	PDF = '.pdf'
 }
 
+export enum FileExtensionDocx {
+	DOCX = '.docx'
+}
+
 export enum FileExtensionText {
 	TXT = '.txt',
 	MD = '.md',
@@ -138,7 +143,9 @@ export enum FileExtensionText {
 
 // MIME type enums
 export enum MimeTypeApplication {
-	PDF = 'application/pdf'
+	PDF = 'application/pdf',
+	DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	DOCM = 'application/vnd.ms-word.document.macroenabled.12'
 }
 
 export enum MimeTypeAudio {
